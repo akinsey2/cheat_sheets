@@ -1,0 +1,220 @@
+www.git-scm.com
+
+--------------
+##  SETUP
+--------------
+
+$git config --global user.name "[firstname lastname]"
+
+$git config --global user.email "[valid@email]"
+
+git commit --amend --reset-author   #-- Reset the name and email for previous commit/push
+
+--------------
+##  GENERAL
+--------------
+
+$git status
+
+$git init  #-- convert current directory into local git repo (sitory)
+
+$git clone [url]   #-- copy hosted repo at url into current working directory
+#-- Does NOT copy remote branches automatically (strangely)
+#-- MUST use "git switch <remote-branchname>" to create and switch to branch locally
+
+$git log --oneline   #-- more compact/convenient view of all commits on branch
+
+$git remote -v   #-- list all remote repository URLs known to this PC
+$git remote add origin <url>   #-- creates a "remote" linking to a GitHub repo of your local repo
+$git remote rename <oldname> <newname>
+$git remote remove <name>
+
+$git push <remote> <branch>
+
+$git show [commitID]   #-- show metadata and contents of the specified <commitID>
+
+.GITIGNORE  #-- Add files here that you want to be permanently ignored by Git
+
+
+--------------
+##  PUSH / FETCH / PULL REPOSITORY TO GITHUB (COMMAND LINE)
+--------------
+
+#-- Create empty repository on GitHub
+
+git branch -M main   #-- Rename "master" to "main"
+git remote add origin https://github.com/......................
+git push -u origin main
+
+git push <remote-name> <local-branchname>:<upstream-branchname>
+git push origin master:main   #-- use this if you want to push to an online branch with a different name
+
+git push --set-upstream <remote-name> <upstream-branchname>
+git push --set-upstream origin dogs
+#-- IS THE SAME AS
+git push -u origin dogs   #-- this establishes the "connection" between local and online branches
+##--  This allows you to just use "git push" command, without having to specify destination each time
+##-- TIP: Don't push from different local branches to the same online branch...it will cause merge issues
+
+$git fetch <remote> [<repository>]   #-- download all changes from remote repo locally
+									 #-- does NOT interrupt local structure...retains remote tracking branch(es) for new stuff
+
+$git branch -r   #-- View all remote tracking branch references
+
+#-- NOTE: Commit Tags are NOT pushed, ever, by default.
+#-- To "push" tags, you MUST specify $git push --tags
+
+
+--------------
+##  COMMIT
+--------------
+
+$git add <filename>   #-- add <filename> to staging
+
+$git add .   #-- add all files in working directory to staging
+
+$git restore --staged <filename>   #-- Remove a file from staging/index
+
+$git reset <filename>  #-- unstage a file while retaining 
+
+$git commit   #-- commit will pop open txt editor for description entry
+
+$git commit -m "message"   #-- commit staged content as new commit snapshot with given message
+
+$git commit -a [-m "message"]   #-- commit all files EXCEPT untracked files
+
+
+
+
+--------------
+##  BRANCHING / NAVIGATING
+--------------
+
+$git branch   #-- list all existing branches
+
+$git branch <newbranchname>   #-- create new branch starting at current "open" commit
+
+$git switch -c <newbranchname>   #-- create AND switch to new branch
+
+$git branch -r   #-- View remote tracking branch reference status
+
+$git checkout <branchname>
+$git switch <branchname>   #-- switch to other branch and update wd with contents of its latest commit
+
+$git checkout <commitID>
+$git switch <commitID>
+
+$git checkout HEAD~1
+$git checkout HEAD~2   #-- switch to commit 2 EARLIER than latest on current branch [detached head]
+$git checkout HEAD~3
+
+#-- ESCAPE "Detached Head"
+$git switch -   #-- switch to previous branch at latest commit
+$git switch <branchname>   #-- switch to specified branch at latest commit
+
+$git branch -d <branchname>   #-- delete the specified branch
+
+$git log   #-- show recent commits, most recent on top
+
+$git log --oneline   #-- more compact/convenient view
+
+$git branch -m <newname>   #-- change name of current branch
+
+
+--------------
+##  DIFFS
+--------------
+
+$git diff   #--only changes between working directory and "staging"/"cached"
+
+$git diff --staged   #--only changes between "staged" and last commit/HEAD
+
+$git diff HEAD   #--all changes between working directory and last commit/HEAD
+
+$git diff <branch1>..<branch2>   
+$git diff <branch1> <branch2>   #--changes between most recent commits on the two branches
+
+$git diff <commit_hash1>..<commit_hash2>
+$git diff <commit_hash1> <commit_hash2>  #--changes between specified commits
+
+$git diff [...] <filename1> <filename2>  #-- view changes only between specified files
+
+
+--------------
+## STASHES
+--------------
+#-- Temporarily "Fake Commit" all changes to working directory and staging to a separate location
+#-- Allows you to "sorta commit" so you can switch branches, and then come back later
+#-- After stashing, the "statched work" does not appear unless you "git stash [pop/apply]" them back
+
+$git stash
+$git stash save   #-- Same command, temporarily "fake" commit all changes to branch
+
+$git stash pop   #-- Pull stashed changes back into working directory & staging, clears stash
+
+$git stash apply   #-- pull stashed changes, BUT KEEP them in the stash
+
+$git stash list   #-- View contents of stash stack
+
+$git stash drop <stash-id>   #-- drop/delete particular entry in stash stack
+
+$git stash clear   #-- Delete all of the stash in the current branch/commit 
+
+
+--------------
+##  UNDO / RESTORE
+--------------
+
+#-- WARNING...this will delete all work completed (unstaged changes) since last commit!!
+
+$git checkout --
+$git checkout HEAD    #-- switch to latest commit on branch (get rid of uncommited changes)
+$git restore --source HEAD [<filenames>]
+
+$git checkout HEAD~1
+$git checkout HEAD~2   #-- switch to commit 2 EARLIER than latest on current branch [detached head]
+$git checkout HEAD~3
+$git restore --source HEAD~1 [<filenames>]   #-- You can optionally specify filenames
+$git restore --source HEAD~2 [<filenames>]
+$git restore --source <commitID> [<filenames>]
+
+#-- End WARNING
+
+$git reset <commitID>   #-- Undo all commits after <commitID>, but keep all changes to files in working directory
+						#-- Allows you to remove "commit" records while keeping the contents of files
+						#-- I.E. if you accidentally made commits to the wrong branch, 
+						#-- and need to remove and redo them on a different branch
+
+						#-- This MOVES the branch pointer AND eliminates commits
+
+#-- NEW WARNING...this will permanently delete all corresponding data
+
+$git reset --hard <commitID>  $--delete all commits AND changes in files after <commitID> on branch
+
+$git revert <commitID>
+$git revert HEAD   #-- UNDO the changes of the specified commit in a NEW Commit
+				   #-- The data ends up the same as the commit BEFORE the one specified
+				   #-- But it leaves all commits in place, none are deleted, and a new one is created
+
+	
+
+
+--------------
+##  SYNCHRONIZING
+--------------
+
+##  CAUTION...this is a powerful tool, and will happily delete and rewrite file contents with no errors or warnings
+## this is usually used in conjunction with PULL requests
+
+$git merge <branchname>  #-- combines <branchname> with the current branch
+
+
+--------------
+##  MAJOR EDITS
+--------------
+
+
+
+$git reset --hard <commitID>   #-- discards all history and changes back to the specified commit
+
+
