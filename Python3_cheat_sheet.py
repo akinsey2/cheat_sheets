@@ -979,12 +979,45 @@ dictwriter_object = csv.DictWriter(f=file_obj,
 
 with open("filename.csv", mode='w') as file1:
 	csv_writer = csv.writer(file1)
-	csv_writer.writerow(["pass write data as list which will be str() formatted"])
+	csv_writer.writerow(["colheader1", "colheader2", "etc"])	# Must write header row manually
+	for row_list in data:
+		csv_writer.writerow(row_list)		# pass write data as list which will be str() formatted
 
 with open("filename.csv", mode='w') as file1:
 	fieldnames1 = ['field1name', 'field2name', 'etc']	# pass in as list or tuple (sequence)
 	csv_dictwriter = csv.DictWriter(file1, fieldnames=fieldnames1)
-	csv_dictwriter.writeheader
+	csv_dictwriter.writeheader()
+	csv_dictwriter.writerow({"field1name": "If you want", "field2name": "you can specify manually"})
+	for row_dict in data:
+		csv_dictwriter.writerow(row_dict)	# pass write data as dict.  Values will be placed in appropriate named column
+
+##############################
+##### Pickling  --  Saving data within python applications to a binary file
+##############################
+
+# Note: only useful for python-python data transfer.  Not human-readable, not easily transferable.
+
+import pickle
+
+# To SAVE:
+pickle.dump(obj=(data, to, save),	# Multiple objects can be combined in a tuple
+			file=file_object,
+			protocol=None,
+			fix_imports=True,
+			buffer_callback=None)
+# Example
+with open("saved_prog_data.pickle", mode = 'wb') as file:	# "Pickling" generates binary, so 'b' must be used
+	pickle.dump((data1, object1, whatever), file)			# can include multiple objects as tuple
+
+# To LOAD: pickle.load(file_obj)
+data = pickle.load(file=file_obj,
+					fix_imports=True,
+					encoding='ASCII',
+					errors='strict',
+					buffers=None)
+
+with open("saved_prog_data.pickle", mode='rb') as file:
+	(data1, object1, whatever) = pickle.load(file)
 
 
 ##############################

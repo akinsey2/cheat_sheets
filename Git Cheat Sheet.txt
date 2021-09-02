@@ -213,8 +213,6 @@ $git merge <branchname>  #-- combines <branchname> with the current branch
 ##  MAJOR EDITS
 --------------
 
-
-
 $git reset --hard <commitID>   #-- discards all history and changes back to the specified commit
 
 
