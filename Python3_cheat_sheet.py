@@ -237,7 +237,10 @@ str1[::-1] == 'kcurtocat'
 
 
 ##############################
-##### Lists			(Vectors/Arrays/Matrices, Ordered, mutable groups of info)
+##### Lists			(Dynamic Vectors/Arrays/Matrices, Ordered, mutable groups of info)
+#####				REFERENTIAL Array: in memory, each position contains a reference/pointer to another object containing the item's contents
+#####				Indexing: O(1) complexity
+#####				Assignment to position: O(1) complexity
 ##############################
 
 # Enclosed by square brackets []
@@ -247,6 +250,15 @@ list1[0] == item1, list1[3] == 4
 ("item2" in list1) -> True
 
 len(list1) == int(length_of_list) == 5
+
+# SHALLOW copy (new list contains references to same objects as previous list)
+list1_copy = list1[:]
+list1_copy = list1.copy()
+
+# DEEP copy (new list references NEW objects)
+import copy 
+list_deep_copy = copy.deepcopy(list1)
+
 
 list1.append("something")					# Adds 1 item to the end of a list
 list1.extend([3, "more", things])			# MUST be passed as list...A(dds multiple items to the end of a list
@@ -991,11 +1003,12 @@ with open("filename.csv", mode='w') as file1:
 	for row_dict in data:
 		csv_dictwriter.writerow(row_dict)	# pass write data as dict.  Values will be placed in appropriate named column
 
+
 ##############################
-##### Pickling  --  Saving data within python applications to a binary file
+##### Pickling & JSONpickling --  Saving data within python applications to a file
 ##############################
 
-# Note: only useful for python-python data transfer.  Not human-readable, not easily transferable.
+# Note: PICKLE only useful for python-python data transfer.  Not human-readable, not easily transferable.
 
 import pickle
 
@@ -1005,9 +1018,9 @@ pickle.dump(obj=(data, to, save),	# Multiple objects can be combined in a tuple
 			protocol=None,
 			fix_imports=True,
 			buffer_callback=None)
-# Example
-with open("saved_prog_data.pickle", mode = 'wb') as file:	# "Pickling" generates binary, so 'b' must be used
-	pickle.dump((data1, object1, whatever), file)			# can include multiple objects as tuple
+
+# Return raw binary instead of writing directly to file.
+bytes_obj = pickle.dumps(obj, protocol=None, *, fix_imports=True, buffer_callback=None)
 
 # To LOAD: pickle.load(file_obj)
 data = pickle.load(file=file_obj,
@@ -1016,9 +1029,51 @@ data = pickle.load(file=file_obj,
 					errors='strict',
 					buffers=None)
 
-with open("saved_prog_data.pickle", mode='rb') as file:
-	(data1, object1, whatever) = pickle.load(file)
+# Reconstruct original object from pickled bytes object
+original_data = pickle.loads(data=pickled_data_bytes, /, *, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)¶
 
+# Example
+with open("saved_prog_data.pickle", mode = 'wb') as file_obj:	# "Pickling" generates binary, so 'b' must be used
+	pickle.dump((data1, object1, whatever), file_obj)			# can include multiple objects as tuple
+with open("saved_prog_data.pickle", mode='rb') as file_obj:
+	(data1, object1, whatever) = pickle.load(file_obj)
+
+
+### JSONpickle --------------------
+
+import jsonpickle
+
+# To convert to JSON
+json_version = jsonpickle.encode(value=any_object,
+								make_refs=True, 	# If False, Objects that are id()-identical won’t be preserved across encode()/decode(). 
+													# jsonpickle detects cyclical objects and will break the cycle by calling repr() instead of recursing.
+								keys=False, 		# Set to TRUE if obj contains Dict with non-string keys!!
+								max_depth=None, 	# Recurse only 'x' levels deep into any object  
+								warn=False, 		# If True, will warn when it returns None for an object which it cannot pickle (e.g. file descriptors).
+								max_iter=None, 		# If set to a non-negative integer then will consume at most max_iter items when pickling iterators.
+								indent=None,		# Indent level for pretty-printing array elements and object members. '0' only newlines. None is most compact.
+								and_more)
+
+original_version = jsonpickle.decode(string, 		# Data read from file
+									backend=None, 	
+									keys=False, 	# If True, will decode non-string dictionary keys into python objects via the jsonpickle protocol.
+									safe=False, 
+									classes=None)  	# set to a single class, or a sequence (list, set, tuple) of classes to give access to local classes 
+													# that are not available through the global module import scope.
+
+# By default, jsonpickle will try to use, in the following order: simplejson, json, and demjson
+jsonpickle.set_preferred_backend(name)		# Use this if a different version is preferred.	
+
+# Example: JSONpickle
+
+with open("filename.json", mode='w') as file:
+	frozen = jsonpickle.encode(data_object)
+	file.write(frozen)
+
+with open("filename.json") as file:
+	contents = file.read()
+	unfrozen = jsonpickle.decode(contents)
+	
 
 ##############################
 ##### Error Handling
