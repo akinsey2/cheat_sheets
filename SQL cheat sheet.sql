@@ -53,6 +53,8 @@
 
 -- NO COMMAS in CASE statements
 
+-- WHERE cannot be used after grouping...HAVING must be used for the same purpose.
+
 
 -----------------------------------
 --*******  NULLs  !!!!   *******
@@ -89,6 +91,12 @@ IS NOT NULL
 -- ...Unless you use Javascript or Python modes, and mysqlx.getSession()
 -- In which case you can have MULTIPLE session objects, one for each server connection
 
+-- IMPORTANT INSTRUCTION:
+-- To start local instance: 
+-- - Ctrl + Alt + Delete
+-- - Select "Services"
+-- - Find "MySQL80", right click, and "Start"
+
 --------------------------------------------------
 -- In terminal window, start MySQL shell with command:
 mysqlsh
@@ -97,7 +105,7 @@ mysqlsh --mysqlx -u root -h localhost -P 33060
 mysqlsh --uri mysqlx://root@localhost:33060       -- Alternate command (same)
 mysqlsh --mysqlx --uri root@localhost:33060       -- Alternate command (same)
 
-mysqlsh --sqlx          -- Open in 
+mysqlsh --sqlx          -- Open in SQL mode
 mysqlsh --py            -- Open in Python mode
 mysqlsh --py < code.py  -- Execute Python file from within shell
 
@@ -177,9 +185,21 @@ CREATE TABLE people           -- Table name
     num_children INT NOT NULL,    -- specifically constrains 'id' col to disallow NULLs
     divide_by NOT NULL DEFAULT 1, -- specifies the "default" value if not specified.
     age INT,                      -- ...and so on
+    username VARCHAR(50) UNIQUE,
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     -- PRIMARY KEY (id)              -- alt. way to specify which col is Primary Key of Table
+    country_id INT NOT NULL,
+    FOREIGN KEY(country_id) 
+      REFERENCES countries(country_id),
+      -- Very critical option
+      ON DELETE CASCADE           -- If a country is deleted that has people associated with it, delete those people also
   );
+
+CREATE TABLE likes (
+    photo_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    PRIMARY KEY(photo_id, user_id)    -- Can use a combination of variables as a primary key
+);
 
 DROP TABLE table_name;  -- Delete table
 
@@ -231,7 +251,7 @@ YEAR
 
 
 -- CRUD: Create Data
-INSERT INTO people(first_name, last_name, age)  
+INSERT INTO people(first_name, last_name, age)
 VALUES ('Tina', 'Belcher', 13),       -- inserts the values in the ORDER listed above!
        ('Bob', 'Belcher', 42),
        ('Calvin', 'Schadenfreude', -1);
@@ -719,6 +739,10 @@ SELECT * FROM Table1 FULL JOIN Table2
 ---------------------------------------
 ---------------------------------------
 
+
+IFNULL(arg, replace_with)   -- If arg is NULL, it will be replaced with replace_with
+
+
 ---------------------------------------
 -- String Functions
 ---------------------------------------
@@ -781,3 +805,70 @@ DATE_SUB(date, INTERVAL expr unit)    -- '1999-12-23' = DATE_SUB('2000-01-01', I
 -- OR alternate +/- syntax
 SELECT date1 + INTERVAL 13 DAY FROM table;
 SELECT datetime1 - INTERVAL 2 YEAR + INTERVAL 10 HOUR FROM table;
+
+
+---------------------------------------
+-- Database Triggers
+---------------------------------------
+
+-- SQL statements that are automatically run when a specific table is changed
+
+-- CAUTION: USE SPARINGLY...triggers occur "invisibly" in the background, making debugging of a server app very difficult
+
+-- Often used to log specific events you want separate records for
+
+SHOW TRIGGERS;  -- All triggers in all databases
+SHOW TRIGGERS FROM database_name;
+SHOW TRIGGERS LIKE pattern;
+
+DROP TRIGGER trigger_name; -- Delete a trigger
+
+
+-- Example 1 : Prevent users under 18 from signing up (probably should be done on client-side)
+
+DELIMITER $$  -- Change the 'end of statement symbol' to '$$'
+
+CREATE TRIGGER trigger_name
+    trigger_time trigger_event ON table_name FOR EACH ROW [trigger_order other_trigger_name]
+-- [BEFORE / AFTER] [INSERT / UPDATE / DELETE] ON table_name [FOLLOWS / PRECEDES] other_trigger name
+-- trigger_order is only used when you have multiple triggers for the same event and want to sequence them
+    BEGIN
+    -- Write methods here
+        IF NEW.age < 18 
+            THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only users over age 18 are permitted.'; 
+    END;
+$$
+DELIMITER ;   -- Change the 'end of statement symbol' back to default ';'
+
+
+-- Example 2 : Prevent "instagram" users from following themselves
+
+DELIMITER $$
+
+CREATE TRIGGER prevent_self_follow
+    BEFORE INSERT ON follows FOR EACH ROW
+    BEGIN
+        IF NEW.follower_id = NEW.followee_id
+            THEN 
+                SIGNAL SQLSTATE '45000' 
+                SET MESSAGE_TEXT = 'You cannot follow yourself';
+        END IF;
+    END;
+$$
+DELIMITER ;
+
+
+-- Example 3 : When an instagram user unfollows something, log event in separate table
+
+DELIMITER $$
+
+CREATE TRIGGER log_unfollow
+    AFTER DELETE ON follows FOR EACH ROW
+    BEGIN
+        INSERT INTO unfollows
+        SET
+            follower_id = OLD.follower_id,
+            followee_id = OLD.followee_id;
+    END;
+$$
+DELIMITER ;
